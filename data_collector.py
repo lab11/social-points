@@ -2,6 +2,7 @@
 import IPy
 import json
 import sys
+import sqlite3
 
 try:
     import socketIO_client as sioc
@@ -38,21 +39,42 @@ class stream_receiver (sioc.BaseNamespace):
         else:
             name = pkt['tx_id']
 
+        print(pkt)
         # Handle data received by this packet
         update_database(name, pkt)
 
 def update_database(name, pkt):
-    # Access database to see record at this name
 
-    # Determine if this is a new social interaction
-    if 
-        # Update time decay of social points
+    try:
+        # Log interaction in database if unique
+        data_tuple = (pkt['tx_id'], pkt['last_tx_id'], pkt['full_time'])
+        name_tuple = (name, pkt['tx_id'])
+        cur.execute("INSERT OR IGNORE INTO Interactions VALUES(?, ?, ?)", data_tuple)
+        cur.execute("INSERT OR REPLACE INTO Identifications VALUES(?, ?)", name_tuple)
+        con.commit()
+    except sqlite3.Error, e:
+        if con:
+            con.rollback()
 
-    else:
-        # Update social points for each user in this interaction
+        print "Sqlite Error: %s:" % e.args[0]
+        sys.exit(1)
+        
+        if con:
+            con.close()
+
+con = sqlite3.connect('opo_data.db')
+cur = con.cursor()
+
+cur.execute("CREATE TABLE IF NOT EXISTS Interactions(Interactor TEXT, Interactee TEXT, Time INT, UNIQUE(Interactor, Interactee, Time))")
+cur.execute("CREATE TABLE IF NOT EXISTS Identifications(Name TEXT, Id TEXT, UNIQUE(Name, Id))")
 
 socketIO = sioc.SocketIO(SOCKETIO_HOST, SOCKETIO_PORT)
 stream_namespace = socketIO.define(stream_receiver,
     '/{}'.format(SOCKETIO_NAMESPACE))
 
-socketIO.wait()
+try:
+    socketIO.wait()
+finally:
+    if con:
+        con.close()
+
