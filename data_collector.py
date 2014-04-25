@@ -24,6 +24,8 @@ query = {'profile_id': '4wbddZCSIj'}
 # query the last week's worth of opo data if requested. This takes a couple
 #   minutes to run
 if len(sys.argv) == 2 and sys.argv[1] == 'repopulate':
+    print("Repopulating database...")
+    SOCKETIO_PORT = 8083
     query['time'] = 7*24*3600*1000
 
 class stream_receiver (sioc.BaseNamespace):
@@ -54,7 +56,7 @@ class stream_receiver (sioc.BaseNamespace):
             uniqname = pkt['uniqname']
 
         # Handle data received by this packet
-        #print(pkt)
+        #print(time.ctime(pkt['adjusted_last_full_timestamp']))
         update_database(full_name, uniqname, pkt)
 
         if (time.time() - self.last_clean_time > 24*3600):

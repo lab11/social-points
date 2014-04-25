@@ -140,6 +140,11 @@ def group_info():
                     total_points += pings
                 day_points['points'] = points
                 point_counts.append(day_points)
+
+            # point_counts needs to be rotated so that the current day is last
+            curr_day_num = time.localtime().tm_wday
+            point_counts = point_counts[curr_day_num+1:] + point_counts[:curr_day_num+1]
+
             point_dict['point_counts'] = point_counts
             point_dict['total_points'] = total_points
             data.append(point_dict)
@@ -151,3 +156,4 @@ def group_info():
 
 if __name__ == "__main__":
     app.run()
+    #app.run(host="0.0.0.0")
