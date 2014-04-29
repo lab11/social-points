@@ -42,6 +42,9 @@ class stream_receiver (sioc.BaseNamespace):
     def on_connect (self):
         stream_namespace.emit('query', query)
 
+    def on_disconnect (self):
+        print("Disconnected!!!")
+
     def on_data (self, *args):
         pkt = args[0]
 
@@ -108,7 +111,9 @@ stream_namespace = socketIO.define(stream_receiver,
     '/{}'.format(SOCKETIO_NAMESPACE))
 
 try:
-    socketIO.wait()
+    while True:
+        socketIO.wait()
+        print("Was ejected from wait... Trying again")
 finally:
     if con:
         con.close()
