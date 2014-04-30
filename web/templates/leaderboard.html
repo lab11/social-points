@@ -142,8 +142,8 @@ legend.append("text")
 
 getInfoAndRender();
 
-// Run our leaderboard on a loop, updating every 10 seconds
-var looper = setInterval(function(){getInfoAndRender()}, 10000)
+// Run our leaderboard on a loop, updating every 60 seconds
+var looper = setInterval(function(){getInfoAndRender()}, 60000)
 
 // Gets the data from the server, passes it to our D3 js
 function getInfoAndRender() {

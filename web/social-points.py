@@ -2,6 +2,9 @@ from flask import Flask, render_template, request, g, make_response, redirect
 import json
 import sqlite3
 import time
+import pagerank
+import numpy as np
+import math
 
 days = ['m', 't', 'w', 'th', 'f', 's', 'su']
 
@@ -92,7 +95,6 @@ def get_db_identifications(cur):
 
     return results
 
-
 @app.route('/group_info')
 def group_info():
     
@@ -118,10 +120,76 @@ def group_info():
 
     data = []
 
+    print(str(ids))
+
     # pagerank points allocation
     if algo_type == 'pagerank':
-        
-        pass
+
+        # calculate pagerank on a day-by-day basis
+        results = {}
+        for day in range(7):
+            # create pagerank graph
+            pr_graph = []
+            for (_, _, my_id) in ids:
+
+                # find interactions with all other ids
+                pr_row = []
+                for (_, _, their_id) in ids:
+                    # sum interactions with this id
+                    interactions = 0
+                    if their_id in interact_dict[my_id][day]:
+                        interactions += interact_dict[my_id][day][their_id]
+
+                    # insert into row
+                    pr_row.append(interactions)
+
+                # insert into pagerank graph
+                pr_graph.append(pr_row)
+
+            # run pagerank algorithm
+            if 0:
+                pr_graph = np.array([[0,0,1,0,0,0,0,0],
+                                     [0,1,1,0,0,0,0,0],
+                                     [1,0,1,1,0,0,0,0],
+                                     [0,0,0,1,1,0,0,0],
+                                     [0,0,0,0,0,0,1,0],
+                                     [0,0,0,0,0,1,1,0],
+                                     [0,0,0,1,1,0,1,0],
+                                     [0,0,0,0,0,0,0,0]])
+ 
+            print("\nAt time: " + str(time.time()))
+            print(str(pr_graph))
+            results[day] = pagerank.pageRank(np.array(pr_graph), maxerr = 0.1)
+            print(str(results[day]))
+            for value in results[day]:
+                if math.isnan(value):
+                    results[day] = [1/float(len(ids))]*len(ids)
+                    break
+
+        # create data for graphing
+        id_index = 0
+        for (full_name, uniqname, id) in ids:
+            total_points = 0
+            point_dict = {}
+            point_dict['full_name'] = full_name
+            point_dict['uniqname'] = uniqname
+            point_counts = []
+            for day_num in range(7):
+                day_points = {}
+                day_points['day'] = days[day_num]
+                day_points['points'] = round(results[day_num][id_index]*100000)
+                total_points += day_points['points']
+                point_counts.append(day_points)
+
+            # point_counts needs to be rotated so that the current day is last
+            curr_day_num = time.localtime().tm_wday
+            point_counts = point_counts[curr_day_num+1:] + point_counts[:curr_day_num+1]
+
+            point_dict['point_counts'] = point_counts
+            point_dict['total_points'] = total_points
+            data.append(point_dict)
+
+            id_index += 1
 
     # default is linear points
     else:
